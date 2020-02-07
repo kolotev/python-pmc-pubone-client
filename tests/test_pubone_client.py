@@ -34,7 +34,7 @@ api_results = [
 headers = {"Content-Type": "application/json"}
 
 
-def test_pmid(requests_mock):
+def test_validate_pmid(requests_mock):
     """
     Test ``validate pmvalidateid_10y.
     """
@@ -48,7 +48,7 @@ def test_pmid(requests_mock):
     assert pubone.pmid == pmid
 
 
-def test_pmcid(requests_mock):
+def test_validate_pmcid(requests_mock):
     """
     Test ``validate pmcid`` functionality.
     """
@@ -62,7 +62,7 @@ def test_pmcid(requests_mock):
     assert pubone.pmcid == pmcid
 
 
-def test_pmid_and_pmcid(requests_mock):
+def test_validate_pmid_and_pmcid(requests_mock):
     """
     Test ``validate pmid and pmcid`` functionality
     """
@@ -78,7 +78,7 @@ def test_pmid_and_pmcid(requests_mock):
     assert pubone.pmid == pmid
 
 
-def test_versioned_pmcid(requests_mock):
+def test_validate_versioned_pmcid(requests_mock):
     """
     Test ``validate versioned pmcid`` functionality.
     In context of bug on pubone side.
@@ -127,7 +127,7 @@ def test_ids_exceptions():
         pubone.lojson(pmcids=1234)
 
 
-def test_real_call():
+def test_multiple_requests_call():
     """
     Test ``real call to pubone api with long list of items`` functionality.
     """
