@@ -1,6 +1,7 @@
 from typing import Union
 from pmc.restapi_client import RestApi, session as s
 import re
+from itertools import chain
 
 PUBONE_EP = (
     "http://pubone.linkerd.ncbi.nlm.nih.gov"
@@ -26,15 +27,16 @@ WebServiceFtsType = s.FtsClassFactory(
 #
 UNWANTED_CHARS = r"[^\d\.]+"
 
-# we possibly can set longer periods and larger try numbers.
 
+class PubOneBase:
+    def _eval_pmid(self, pmid_raw):
+        if isinstance(pmid_raw, str):
+            return int(pmid_raw)
 
-class PubOneClient:
-    def __init__(self, ep=PUBONE_EP, session=CmdLineFtsType(), debug=0):
-        self._api = RestApi(ep=ep, session=session, debug=debug)
-        self._pmid = None
-        self._pmcid = None
-        self._doi = None
+    def _eval_pmcid(self, pmcid_raw):
+        if isinstance(pmcid_raw, str):
+            _pmcid_str, _ = re.subn(UNWANTED_CHARS, "", pmcid_raw)
+            return int(float(_pmcid_str))
 
     def _validate_id(self, value: Union[int, str], name: str) -> bool:
         _ = (
@@ -51,6 +53,30 @@ class PubOneClient:
             raise ValueError(_(value, name))
 
         return value
+
+    def _validate_ids(self, ids, ids_name, id_name):
+        ids_type = type(ids)
+
+        if ids is not None:
+            if ids_type not in (list, tuple):
+                raise ValueError(
+                    f"`{ids_name}` must be list or tuple, {ids_type} supplied instead."
+                )
+            map(lambda id: self._validate_id(id, id_name), ids)
+
+
+class PubOneValidator(PubOneBase):
+    def __init__(self, ep=PUBONE_EP, session=CmdLineFtsType(), logger=None, debug=0):
+        self._api = RestApi(ep=ep, session=session, debug=debug)
+
+        self._pmid = None
+        self._pmcid = None
+        self._doi = None
+
+        self._ep = ep
+        self._session = session
+        self._logger = logger
+        self._debug = debug
 
     def valid(self, pmid: int = None, pmcid: int = None) -> bool:
         pmid = self._validate_id(pmid, "pmid")
@@ -96,15 +122,6 @@ class PubOneClient:
             or (pmid == _pmid and pmcid is None)
         )
 
-    def _eval_pmid(self, pmid_raw):
-        if isinstance(pmid_raw, str):
-            return int(pmid_raw)
-
-    def _eval_pmcid(self, pmcid_raw):
-        if isinstance(pmcid_raw, str):
-            _pmcid_str, _ = re.subn(UNWANTED_CHARS, "", pmcid_raw)
-            return int(float(_pmcid_str))
-
     @property
     def pmid(self):
         return self._pmid
@@ -118,18 +135,56 @@ class PubOneClient:
         return self._doi
 
 
-# if __name__ == "__main__":
-#     import logging as lg
-#
-#     LOGGING_FORMAT = "%(levelname)-7s %(asctime)s.%(msecs)03d  %(message)s"
-#     lg.basicConfig(format=LOGGING_FORMAT, datefmt="%Y-%m-%dT%H:%M:%S")
-#     lg.getLogger().setLevel(level=lg.DEBUG)
-#
-#     pone = PubOne(debug=3)
-#     assert pone.valid(pmcid=1) is False
-#     assert pone.valid(pmcid=1) is False
-#     assert pone.valid(pmid=40_000_000) is False
-#     assert pone.valid(pmid=1) is True
-#     assert pone.valid(pmcid=13901) is True
-#     assert pone.valid(pmid=1, pmcid=13901) is False
-#     assert pone.valid(pmid=11250747, pmcid=13901) is True
+class PubOneApi(PubOneBase):
+    def __init__(self, ep=PUBONE_EP, session=CmdLineFtsType(), logger=None, debug=0):
+        self._api = RestApi(ep=ep, session=session, debug=debug)
+
+        self._ep = ep
+        self._session = session
+        self._logger = logger
+        self._debug = debug
+
+    def _params_group_gen(self, pmids=None, pmcids=None):
+        params_gen = chain(
+            map(lambda i: f"pubmed_{i}", pmids or []),
+            map(lambda i: f"pmc_{i}", pmcids or []),
+        )
+
+        s = ""
+        for param in params_gen:
+            s += param + ","
+            if len(s) >= 2000:
+                yield s.rstrip(",")
+                s = ""
+
+        if len(s) > 0:
+            yield s.rstrip(",")
+
+    def _api_generic(self, api_name, pmids=None, pmcids=None):
+
+        if pmids is None and pmcids is None:
+            raise ValueError(f"Both `pmids` and `pmcids` are not deined.")
+
+        self._validate_ids(pmids, "pmids", "pmid")
+        self._validate_ids(pmcids, "pmcids", "pmcid")
+
+        results = []
+        for params_group in self._params_group_gen(pmids, pmcids):
+            resource = getattr(self._api, api_name)(params_group)
+            response = resource.get()
+            if (
+                response.data is not None
+                and isinstance(response.data, list)
+                and len(response.data) > 0
+            ):
+                results += response.data
+        return results
+
+    def lojson(self, pmids=None, pmcids=None):
+        return self._api_generic("lojson", pmids, pmcids)
+
+    def citjson(self, pmids=None, pmcids=None):
+        return self._api_generic("citjson", pmids, pmcids)
+
+    def csljson(self, pmids=None, pmcids=None):
+        return self._api_generic("csljson", pmids, pmcids)

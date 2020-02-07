@@ -72,10 +72,11 @@ misc/run_tests_pytest.sh
 ## Usage
 
 ### Simple Validation
-```python
-from pmc.pubone_client import PubOneClient
 
-pubone = PubOneClient()
+```python
+from pmc.pubone_client import PubOneValidator
+
+pubone = PubOneValidator()
 
 # validate PubMed and PMC ids for existance and
 # match to the same article.
@@ -91,8 +92,31 @@ if pubone.valid(pmcid=13901):
     print("You PMC id is valid.")
 
 ```
+### APIs
 
-### For Web Service environment.
+#### `lojson`
+
+```python
+from pmc.pubone_client import PubOneApi
+
+pubone = PubOneApi()
+
+# pull lojson results for a list of PubMed ids
+results = pubone.lojson(pmids=[1]) # one or many ids
+
+# pull lojson results for a list of PMC ids
+results = pubone.lojson(pmcids=[13901]) # one or many ids
+
+# pull lojson results for a combination of PubMed and PMC ids lists
+results = pubone.lojson(pmids=[1], pmcids=[13901]) # one or many ids of each type.
+```
+
+
+### API `csljson`
+
+### API `citjson`
+
+### Choose Environment.
 
 #### With prebuilt sessions types:
 
@@ -138,4 +162,6 @@ pubone = PubOneClient(session=SessionType())
 ...
 ```
 
+## Notes:
 
+Currently this package supports PubOne responses in JSON format only.

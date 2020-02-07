@@ -9,7 +9,13 @@ else:
     __version__ = _distribution.version if _distribution else "SNAPSHOT"
 
 
-from .pubone import PubOneClient, CmdLineFtsType, WebServiceFtsType, PUBONE_EP
+from .pubone import (
+    PubOneApi,
+    PubOneValidator,
+    CmdLineFtsType,
+    WebServiceFtsType,
+    PUBONE_EP,
+)
 
 
-__all__ = (PubOneClient, CmdLineFtsType, WebServiceFtsType, PUBONE_EP)
+__all__ = (PubOneApi, PubOneValidator, CmdLineFtsType, WebServiceFtsType, PUBONE_EP)
