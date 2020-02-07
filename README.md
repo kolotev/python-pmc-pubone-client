@@ -94,7 +94,13 @@ if pubone.valid(pmcid=13901):
 ```
 ### APIs
 
-#### `lojson`
+#### `lojson`, `citjson`, `csljson`
+
+The following code is using `lojson` API, but other
+APIs are avaiable in the same manner `results = pubone.citjson(...)`
+and `results = pubone.csljson(...)`
+
+`results` is a list of items returned from API.
 
 ```python
 from pmc.pubone_client import PubOneApi
@@ -105,18 +111,13 @@ pubone = PubOneApi()
 results = pubone.lojson(pmids=[1]) # one or many ids
 
 # pull lojson results for a list of PMC ids
-results = pubone.lojson(pmcids=[13901]) # one or many ids
+results = pubone.citjson(pmcids=[13901,13902]) # one or many ids
 
 # pull lojson results for a combination of PubMed and PMC ids lists
-results = pubone.lojson(pmids=[1], pmcids=[13901]) # one or many ids of each type.
+results = pubone.csljson(pmids=[1,2,3], pmcids=[13901]) # one or many ids of each kind.
 ```
 
-
-### API `csljson`
-
-### API `citjson`
-
-### Choose Environment.
+### Running Environments.
 
 #### With prebuilt sessions types:
 
@@ -164,4 +165,7 @@ pubone = PubOneClient(session=SessionType())
 
 ## Notes:
 
-Currently this package supports PubOne responses in JSON format only.
+- Currently this package supports PubOne responses in JSON format only.
+
+- Do not forget, that you need to use linkerd:4140 proxy to make this module 
+to work as expected.
