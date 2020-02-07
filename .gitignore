@@ -31,4 +31,7 @@
 /*.trace
 
 # virtualenv
-Pipfile
+Pipfile*
+
+# Visual Studio code
+.vscode
