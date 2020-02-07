@@ -67,7 +67,7 @@ class PubOneBase:
 
 class PubOneValidator(PubOneBase):
     def __init__(self, ep=PUBONE_EP, session=CmdLineFtsType(), logger=None, debug=0):
-        self._api = RestApi(ep=ep, session=session, debug=debug)
+        self._api = RestApi(ep=ep, session=session, logger=logger, debug=debug)
 
         self._pmid = None
         self._pmcid = None
@@ -137,7 +137,7 @@ class PubOneValidator(PubOneBase):
 
 class PubOneApi(PubOneBase):
     def __init__(self, ep=PUBONE_EP, session=CmdLineFtsType(), logger=None, debug=0):
-        self._api = RestApi(ep=ep, session=session, debug=debug)
+        self._api = RestApi(ep=ep, session=session, logger=logger, debug=debug)
 
         self._ep = ep
         self._session = session
