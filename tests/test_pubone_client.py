@@ -131,7 +131,13 @@ def test_real_call():
     """
     Test ``real call to pubone api with long list of items`` functionality.
     """
-    pubone = PubOneApi(session=WebServiceFtsType())
+    proxies = {
+        "http": "linkerd:4140",
+    }
+    session = WebServiceFtsType()
+    session.proxies = proxies
+
+    pubone = PubOneApi(session=session)
     results = pubone.lojson(pmids=list(range(1, 300)))
 
     assert 299 >= len(results) >= 290
