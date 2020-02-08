@@ -192,7 +192,7 @@ def _prep_mock(requests_mock, pmid, pmcid, outcome, mocked_json):
             [{"id": "10", "pmcid": "PMC5922622"}, {"id": "", "pmcid": "PMC13901"}],
         ),
         ("case_3.1", 10, 10, ex.PmcidAbsent, [{"id": "10", "pmcid": "PMC5922622"}]),
-        ("case_3.2", None, 10, ex.PmcidAbsent, []),
+        ("case_3.2", 1053, 1, ex.PmcidAbsent, [{"id": "1053"}]),
         ("case_4", 10, None, True, [{"id": "10", "pmcid": "PMC5922622"}]),
         (
             "case_5",
