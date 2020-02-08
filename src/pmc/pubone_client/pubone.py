@@ -256,12 +256,13 @@ class PubOneApi(PubOneBase):
         for params_group in self._params_group_gen(pmids, pmcids):
             resource = getattr(self._api, api_name)(params_group)
             response = resource.get()
-            if (
-                response.data is not None
-                and isinstance(response.data, list)
-                and len(response.data) > 0
-            ):
-                results += response.data
+
+            data = response.data
+            data = [data] if isinstance(data, dict) else data
+
+            if data is not None and isinstance(data, list) and len(data) > 0:
+                results += data
+
         return results
 
     def lojson(self, pmids=None, pmcids=None):

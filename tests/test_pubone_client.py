@@ -33,6 +33,8 @@ api_results = [
     {"k1": "v1_3", "k2": "v2_3"},
 ]
 
+api_single = [{"k1": "v1_1", "k2": "v2_1"}]
+
 headers = {"Content-Type": "application/json"}
 
 
@@ -97,7 +99,7 @@ def test_validate_versioned_pmcid(requests_mock):
 
 
 @pytest.mark.parametrize("api_name", ["lojson", "citjson", "csljson"])
-def test_apis(requests_mock, api_name):
+def test_apis_multiple(requests_mock, api_name):
     """
     Test ``JSON PubOne API`` functionality.
     """
@@ -111,6 +113,23 @@ def test_apis(requests_mock, api_name):
 
     assert len(results) == 3
     assert results == api_results
+
+
+@pytest.mark.parametrize("api_name", ["citjson", "csljson"])
+def test_apis_single(requests_mock, api_name):
+    """
+    Test ``JSON PubOne API`` functionality.
+    """
+    json = api_single[0]
+    requests_mock.get(
+        PUBONE_EP + f"/{api_name}/pubmed_1", json=json, headers=headers,
+    )
+
+    pubone = PubOneApi(session=WebServiceFtsType())
+    results = getattr(pubone, api_name)(pmids=[1])
+
+    assert len(results) == 1
+    assert results == api_single
 
 
 def test_ids_exceptions():
