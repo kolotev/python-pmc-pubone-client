@@ -46,7 +46,7 @@ class PmidPmcidMismatch(BaseException):
     do not match/correspond to the same article in PubOne."""
 
     default_error_message = (
-        "pmid=`{pmid}` and pmcid=`{pmcid}` are not matching"
+        "pmid=`{pmid}` and pmcid=`{pmcid}` are not matching "
         "to the same article in PubOne."
     )
 
