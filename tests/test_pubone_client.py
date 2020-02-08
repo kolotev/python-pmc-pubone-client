@@ -1,5 +1,7 @@
 import pytest
 from pmc.pubone_client import PubOneValidator, PubOneApi, WebServiceFtsType, PUBONE_EP
+from pmc.pubone_client import exceptions as ex
+from itertools import chain
 
 
 def test_init():
@@ -44,7 +46,7 @@ def test_validate_pmid(requests_mock):
         PUBONE_EP + f"/lojson/pubmed_{pmid}", json=json, headers=headers,
     )
     pubone = PubOneValidator(session=WebServiceFtsType())
-    assert pubone.valid(pmid=pmid) is True
+    assert pubone.validate(pmid=pmid) is True
     assert pubone.pmid == pmid
 
 
@@ -58,7 +60,7 @@ def test_validate_pmcid(requests_mock):
         PUBONE_EP + f"/lojson/pmc_{pmcid}", json=json, headers=headers,
     )
     pubone = PubOneValidator(session=WebServiceFtsType())
-    assert pubone.valid(pmcid=pmcid) is True
+    assert pubone.validate(pmcid=pmcid) is True
     assert pubone.pmcid == pmcid
 
 
@@ -73,7 +75,7 @@ def test_validate_pmid_and_pmcid(requests_mock):
         PUBONE_EP + f"/lojson/pubmed_{pmid},pmc_{pmcid}", json=json, headers=headers,
     )
     pubone = PubOneValidator(session=WebServiceFtsType())
-    assert pubone.valid(pmid=pmid, pmcid=pmcid) is True
+    assert pubone.validate(pmid=pmid, pmcid=pmcid) is True
     assert pubone.pmcid == pmcid
     assert pubone.pmid == pmid
 
@@ -90,7 +92,7 @@ def test_validate_versioned_pmcid(requests_mock):
     )
 
     pubone = PubOneValidator(session=WebServiceFtsType())
-    assert pubone.valid(pmcid=pmcid) is True
+    assert pubone.validate(pmcid=pmcid) is True
     assert pubone.pmcid == pmcid
 
 
@@ -117,7 +119,7 @@ def test_ids_exceptions():
     """
     pubone = PubOneApi(session=WebServiceFtsType())
 
-    with pytest.raises(ValueError, match=r"Both .* are not deined."):
+    with pytest.raises(ValueError, match=r"Both .* are not defined."):
         pubone.lojson()
 
     with pytest.raises(ValueError, match=r"must be list or tuple"):
@@ -138,6 +140,90 @@ def test_multiple_requests_call():
     session.proxies = proxies
 
     pubone = PubOneApi(session=session)
-    results = pubone.lojson(pmids=list(range(1, 300)))
+    results = pubone.lojson(pmids=list(range(1, 301)))
 
-    assert 299 >= len(results) >= 290
+    assert len(results) == 300
+
+
+def _prep_mock(requests_mock, pmid, pmcid, outcome, mocked_json):
+
+    json = []
+
+    if mocked_json is not None:
+        json = mocked_json
+
+    elif outcome is not ValueError:
+        json = [{}]
+        for i in list(
+            chain(
+                map(lambda i: {"id": str(i)}, pmid and [pmid] or []),
+                map(lambda i: {"pmcid": f"PMC{i}"}, pmcid and [pmcid] or []),
+            )
+        ):
+            json[0].update(i)
+
+    resource = ",".join(
+        chain(
+            map(lambda i: f"pubmed_{i}", pmid and [pmid] or []),
+            map(lambda i: f"pmc_{i}", pmcid and [pmcid] or []),
+        )
+    )
+
+    requests_mock.get(
+        PUBONE_EP + f"/lojson/{resource}", json=json, headers=headers,
+    )
+
+
+@pytest.mark.parametrize(
+    "case,pmid,pmcid,outcome,mocked_json",
+    [
+        ("case_0.0", None, None, ValueError, None),
+        ("case_0.1", "abc", None, ValueError, None),
+        ("case_0.2", None, "xyz", ValueError, None),
+        ("case_0.3", "abc", "xyz", ValueError, None),
+        ("case_0.4", -1, None, ValueError, None),
+        ("case_0.5", None, 0, ValueError, None),
+        ("case_1", 10, 5922622, True, None),
+        (
+            "case_2",
+            10,
+            13901,
+            ex.PmidPmcidMismatch,
+            [{"id": "10", "pmcid": "PMC5922622"}, {"id": "", "pmcid": "PMC13901"}],
+        ),
+        ("case_3.1", 10, 10, ex.PmcidAbsent, [{"id": "10", "pmcid": "PMC5922622"}]),
+        ("case_3.2", None, 10, ex.PmcidAbsent, []),
+        ("case_4", 10, None, True, [{"id": "10", "pmcid": "PMC5922622"}]),
+        (
+            "case_5",
+            1054,
+            13901,
+            ex.PmidAbsent,
+            [{"id": "11250747", "pmcid": "PMC13901"}],
+        ),
+        ("case_6", 1054, 10, ex.PmidPmcidAbsent, []),
+        ("case_7", 1054, None, ex.PmidAbsent, []),
+        ("case_8", None, 13901, True, [{"id": "11250747", "pmcid": "PMC13901"}]),
+        ("case_9", None, 10, ex.PmcidAbsent, []),
+    ],
+)
+def test_case(requests_mock, case, pmid, pmcid, outcome, mocked_json):
+    """
+    Test ``cases of PubOne API`` functionality.
+    """
+    # prepare mocked response
+    _prep_mock(requests_mock, pmid, pmcid, outcome, mocked_json)
+
+    #
+    pubone = PubOneValidator(session=WebServiceFtsType())
+
+    if isinstance(outcome, bool):
+        assert pubone.validate(pmid=pmid, pmcid=pmcid) is True
+    elif isinstance(outcome, type):
+        with pytest.raises(outcome):
+            pubone.validate(pmid=pmid, pmcid=pmcid) is not True
+    else:
+        raise RuntimeError(
+            f"Unexpected end if test case={case} pmid={pmid} "
+            f"pmcid={pmcid} outcome={outcome}"
+        )

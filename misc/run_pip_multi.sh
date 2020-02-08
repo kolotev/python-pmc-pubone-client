@@ -3,5 +3,6 @@
 source $(dirname $0)/.init.rc
 
 set -x
-pip-compile-multi --no-upgrade --use-cache "$@"
+# --no-upgrade
+pip-compile-multi --use-cache "$@"
 

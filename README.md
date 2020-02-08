@@ -78,20 +78,35 @@ from pmc.pubone_client import PubOneValidator
 
 pubone = PubOneValidator()
 
-# validate PubMed and PMC ids for existance and
+# validate PubMed and PMC ids for existence and
 # match to the same article.
-if pubone.valid(pmid=10, pmcid=5922622):
+if pubone.validate(pmid=10, pmcid=5922622):
     print("You PubMed id and PMC ids are valid and matching to the same article.")
 
 # validate PubMed id for existance.
-if pubone.valid(pmid=10):
+if pubone.validate(pmid=10):
     print("You PubMed id is valid.")
 
 # validate PMC id for existance.
-if pubone.valid(pmcid=13901):
+if pubone.validate(pmcid=13901):
     print("You PMC id is valid.")
 
 ```
+
+In case of invalid values or problem with PubOne service the following exceptions could be raised:
+
+- ValueError - Exception to indicate various cases 
+of bad/unexpected arguments supplied to returned by PubOne service.
+- PmidAbsent - Exception to indicate, that a given pmid does not exist in PubOne.
+- PmcidAbsent - Exception to indicate, that a given pmcid
+does not exist in PubOne.
+- PmidPmcidAbsent - Exception to indicate, that both pmid and pmcid
+do not exist in PubOne.
+- PmidPmcidMismatch - Exception to indicate, that given pmid and pmcid
+do not match/correspond to the same article in PubOne.
+- PubOneServiceFailed - Usually that exception should be expected if PubOne is down, overloaded or returns unexpected data.
+
+
 ### APIs
 
 #### `lojson`, `citjson`, `csljson`
