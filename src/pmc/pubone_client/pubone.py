@@ -32,12 +32,10 @@ UNWANTED_CHARS = r"[^\d\.]+"
 
 class PubOneBase:
     def _eval_pmid(self, pmid_raw):
-        assert isinstance(pmid_raw, str) is True
         if isinstance(pmid_raw, str):
             return int(pmid_raw)
 
     def _eval_pmcid(self, pmcid_raw):
-        assert isinstance(pmcid_raw, str) is True
         if isinstance(pmcid_raw, str):
             _pmcid_str, _ = re.subn(UNWANTED_CHARS, "", pmcid_raw)
             return int(float(_pmcid_str))
