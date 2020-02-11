@@ -106,6 +106,27 @@ do not exist in PubOne.
 do not match/correspond to the same article in PubOne.
 - PubOneServiceFailed - Usually that exception should be expected if PubOne is down, overloaded or returns unexpected data.
 
+here is an example of handling exceptions:
+
+```python
+from pmc.pubone_client import PubOneValidator, exceptions as ex
+
+pmid = ...
+pmcid = ...
+try:
+    pubone.validate(pmid=pmid, pmcid=pmcid) # at lease one must be present
+except ex.PmcidAbsent as e:
+    raise YourException(...)
+except ex.PmidAbsent as e:
+    raise YourException(...)
+except ex.PmidPmcidMismatch as e:
+    raise YourException(...)
+except ex.PmidPmcidAbsent as e:
+    raise YourException(...)
+except ex.PubOneServiceFailed as e:
+    raise Exception(str(e))
+    
+```
 
 ### APIs
 
