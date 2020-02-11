@@ -83,7 +83,7 @@ class PubOneValidator(PubOneBase):
         resource_name = ",".join(list(filter(lambda i: i is not None, params)))
 
         try:
-            response = getattr(self._api.lojson, resource_name).get()
+            response = self._api.lojson(resource_name).get()
         except api_ex.HttpServerError as e:
             raise ex.PubOneServiceFailed(e)
 
